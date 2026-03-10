@@ -22,7 +22,7 @@ A zero-setup, single-file HTML tool that allows you to paste any code snippet an
 1.  Download the `index.html` file and open it in any modern web browser. 
 2.  Visit through website link directly. 
 
-* **live on Github** [Click here! ]()
+* **live on Github** [Click here! ](https://irfanh-dev.github.io/code-wrapper/)
 
 * 💡 Tip: For regular usage, add the file to your browser bookmarks for instant access. 
 * 💡 Tip: For accurate results, give it name with extension (e.g.  `filename.html` ) 
