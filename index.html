@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Code-Wrapper</title>
+    <link rel="icon" type="image/png" href="https://i.ibb.co/3YyyXPff/irfanh.png">
+    <!-- Author GitHub: https://github.com/irfanh-dev -->
+    <link rel="preconnect" href="https://rsms.me">
+    <link rel="dns-prefetch" href="https://rsms.me">
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <style>
+        :root {
+            --neon-blue: #00BFFF;
+            /* Soft neon blue for accents */
+            --dark-blue-bg: #0A192F;
+            /* Deep blue background */
+            --card-bg: #1A2E47;
+            /* Slightly lighter blue for card */
+            --border-glow-color: #40C4FF;
+            /* Light sky blue for borders */
+            --text-light: #E0FFFF;
+            /* Light cyan for text */
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Inter', sans-serif;
+            background: var(--dark-blue-bg);
+            color: var(--text-light);
+            text-shadow: 0 0 3px var(--neon-blue);
+            overflow: hidden;
+            /* NEW: Use flex for main content layout */
+            flex-direction: column;
+            position: relative;
+        }
+
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .main-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            max-width: 1200px;
+            height: 100vh;
+            position: relative;
+            /* NEW: Padding for footer space */
+            padding-bottom: 40px;
+            box-sizing: border-box;
+        }
+
+        /* NEW FOOTER STYLE */
+        .page-footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            text-align: center;
+            padding: 8px 0;
+            font-size: 0.8rem;
+            background: rgba(10, 25, 47, 0);
+            /* Dark background with slight transparency */
+            color: white;
+            /* Plain white color */
+            text-shadow: none;
+            /* No neon shadow for a 'plain' look */
+            z-index: 10;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* END NEW FOOTER STYLE */
+
+        .side-panel {
+            width: 300px;
+            height: 100%;
+            background: var(--card-bg);
+            /* Plain background */
+            border-right: 1px solid rgba(64, 196, 255, 0.3);
+            position: fixed;
+            left: -328px;
+            top: 0;
+            transition: left 0.3s ease-in-out;
+            z-index: 2;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .side-panel.open {
+            left: 0;
+        }
+
+        .panel-handle {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 3px;
+            height: 100%;
+            background-color: var(--neon-blue);
+            cursor: pointer;
+            z-index: 3;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .panel-handle:hover {
+            background-color: transparent;
+        }
+
+        .panel-handle::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 30px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="%2300BFFF" stroke-width="3" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>') no-repeat center;
+            background-size: contain;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .panel-handle:hover::after {
+            opacity: 1;
+        }
+
+        .side-panel.open+.panel-handle {
+            background-color: var(--neon-blue);
+        }
+
+        .side-panel.open+.panel-handle::after {
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="%2300BFFF" stroke-width="3" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>') no-repeat center;
+            background-size: contain;
+            opacity: 0;
+        }
+
+        .side-panel.open+.panel-handle:hover::after {
+            opacity: 1;
+        }
+
+        .history-list {
+            margin-top: 2rem;
+        }
+
+        .history-item {
+            background: #0F2038;
+            padding: 0.8rem;
+            margin-bottom: 0.8rem;
+            border-radius: 8px;
+            border: 1px solid rgba(64, 196, 255, 0.3);
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 0.8rem;
+        }
+
+        .history-item:hover {
+            border-color: var(--border-glow-color);
+            transform: translateY(-1px);
+            background: #142a40;
+        }
+
+        .history-item-content {
+            flex: 1;
+            cursor: pointer;
+            min-width: 0;
+        }
+
+        .history-item p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: #B3E5FC;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: 500;
+        }
+
+        .history-filename {
+            margin-bottom: 0.4rem !important;
+        }
+
+        .history-item small {
+            color: #80D8FF;
+            font-size: 0.7rem;
+            display: block;
+            margin-top: 0;
+            letter-spacing: 0.3px;
+        }
+
+        .history-details {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .history-item-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .history-item-btn {
+            background: transparent;
+            border: 1px solid rgba(64, 196, 255, 0.2);
+            cursor: pointer;
+            padding: 0.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            color: var(--neon-blue);
+            width: 28px;
+            height: 28px;
+            min-width: 28px;
+            box-shadow: none;
+        }
+
+        .history-item-btn:hover {
+            background: rgba(64, 196, 255, 0.1);
+            border-color: var(--neon-blue);
+            color: #40C4FF;
+        }
+
+        .history-item-btn.delete:hover {
+            color: #FF6B6B;
+            background: rgba(255, 107, 107, 0.1);
+            border-color: #FF6B6B;
+        }
+
+        .history-item-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .clear-history-btn {
+            margin-top: 1rem;
+            padding: 8px 16px;
+            background: none;
+            /* border: 1px solid #FF6B6B; */
+            color: #FF6B6B;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            text-align: center;
+            text-shadow: none;
+        }
+
+        .clear-history-btn:hover {
+            background-color: #FF6B6B;
+            color: var(--text-light);
+        }
+
+        .container {
+            background: linear-gradient(145deg, var(--card-bg) 0%, #172a46 100%);
+            padding: 2rem;
+            border-radius: 15px;
+            border: 1px solid var(--border-glow-color);
+            box-shadow: 0 0 15px rgba(64, 196, 255, 0.3),
+                0 0 30px rgba(64, 196, 255, 0.2);
+            transition: all 0.4s ease-in-out;
+            max-width: 90%;
+            width: 500px;
+            text-align: center;
+            z-index: 1;
+        }
+
+        .container:hover {
+            box-shadow: 0 0 20px rgba(64, 196, 255, 0.4),
+                0 0 40px rgba(64, 196, 255, 0.3);
+            transform: translateY(-3px);
+        }
+
+        h1 {
+            color: var(--text-light);
+            font-size: 2rem;
+            text-shadow: 0 0 5px rgba(0, 191, 255, 0.5);
+            margin-bottom: 1rem;
+        }
+
+        p {
+            color: #B3E5FC;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+            text-shadow: none;
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 10px;
+            border: 1px solid var(--border-glow-color);
+            border-radius: 10px;
+            background-color: #0F2038;
+            color: var(--text-light);
+            font-family: monospace;
+            font-size: 1rem;
+            resize: vertical;
+            box-shadow: inset 0 0 8px rgba(64, 196, 255, 0.2);
+            box-sizing: border-box;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--neon-blue);
+            box-shadow: inset 0 0 10px rgba(64, 196, 255, 0.3), 0 0 10px rgba(64, 196, 255, 0.3);
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 1rem;
+            border: 1px solid var(--border-glow-color);
+            border-radius: 5px;
+            background-color: #0F2038;
+            color: var(--text-light);
+            font-family: monospace;
+            font-size: 1rem;
+            box-shadow: inset 0 0 8px rgba(64, 196, 255, 0.2);
+            box-sizing: border-box;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--neon-blue);
+            box-shadow: inset 0 0 10px rgba(64, 196, 255, 0.3), 0 0 10px rgba(64, 196, 255, 0.3);
+        }
+
+        button {
+            margin-top: 1rem;
+            padding: 10px 20px;
+            background-color: var(--neon-blue);
+            color: var(--dark-blue-bg);
+            font-weight: bold;
+            text-shadow: 0 0 3px #fff;
+            border: 2px solid var(--neon-blue);
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(64, 196, 255, 0.3), 0 0 20px rgba(64, 196, 255, 0.2);
+            transition: all 0.3s ease-in-out;
+            cursor: pointer;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        button:hover {
+            background-color: #40C4FF;
+            box-shadow: 0 0 15px rgba(64, 196, 255, 0.4), 0 0 30px rgba(64, 196, 255, 0.3);
+            transform: translateY(-5px) scale(1.02);
+            border-color: #fff;
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 0 8px rgba(64, 196, 255, 0.3);
+        }
+
+
+
+
+
+        /* Responsive design for smaller screens */
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+                align-items: center;
+                /* Adjust for side panel height when open */
+                height: auto;
+                min-height: 100vh;
+            }
+
+            .side-panel {
+                width: 100%;
+                height: 50%;
+                top: -310px;
+                left: 0;
+                border-right: none;
+                border-bottom: 1px solid var(--border-glow-color);
+            }
+
+            .side-panel.open {
+                top: 0;
+            }
+
+            .panel-handle {
+                width: 100%;
+                height: 3px;
+                top: 0;
+                left: 0;
+            }
+
+            .panel-handle::after {
+                background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="%2300BFFF" stroke-width="3" viewBox="0 0 24 24"><path d="M5 9l7 7 7-7"/></svg>') no-repeat center;
+                background-size: contain;
+            }
+
+            .panel-handle:hover::after {
+                opacity: 1;
+            }
+
+            .side-panel.open+.panel-handle::after {
+                background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="%2300BFFF" stroke-width="3" viewBox="0 0 24 24"><path d="M19 15l-7-7-7 7"/></svg>') no-repeat center;
+                background-size: contain;
+                opacity: 0;
+            }
+
+            .side-panel.open+.panel-handle:hover::after {
+                opacity: 1;
+            }
+
+            .container {
+                padding: 1.5rem;
+                width: 90%;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            p {
+                font-size: 0.8rem;
+            }
+
+            textarea {
+                height: 150px;
+                font-size: 0.9rem;
+            }
+
+            input[type="text"] {
+                font-size: 0.9rem;
+            }
+
+            button {
+                padding: 8px 16px;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 1.2rem;
+            }
+
+            p {
+                font-size: 0.7rem;
+            }
+
+            textarea {
+                height: 120px;
+                font-size: 0.8rem;
+            }
+
+            input[type="text"] {
+                font-size: 0.8rem;
+            }
+
+            button {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+            }
+
+            .side-panel {
+                height: 60%;
+                top: -310px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="particleCanvas"></canvas>
+    <div class="panel-handle" onclick="toggleSidePanel()"></div>
+    <div class="side-panel" id="sidePanel">
+        <h2 style="color: var(--neon-blue); text-shadow: 0 0 5px rgba(0, 191, 255, 0.5);"> Code History 😉</h2>
+        <button class="clear-history-btn" onclick="clearHistory()">Clear All History</button>
+        <div class="history-list" id="historyList"></div>
+    </div>
+
+    <div class="main-container">
+        <div class="container">
+            <h1>I am Code Wrapper, Captain 👨‍✈️</h1>
+            <textarea id="codeInput" autofocus
+                placeholder="Instructions for Captain;&#10;
+1. Paste your code here,&#10;2. You can give it a name or default would be `code`,&#10;3. Give it an extension or it would detect it,&#10;4. Hit enter after a name or download button.&#10;5. For plane text, extension is .txt.&#10;6. There is history panel at leftside.&#10;7. History is stored on your pc captain. "></textarea>
+            <input type="text" id="fileNameInput" placeholder="Enter filename with extension (e.g., myfile.txt)">
+            <button onclick="downloadCode()" style="font-size: 0.9rem;">Download with a click</button>
+            <p id="detectedType">I'll figure out what language is it for you 😈. </p>
+        </div>
+    </div>
+
+
+
+
+
+    <footer class="page-footer" style="background-color: #1a2e4737;">
+        Copyright &copy; 2026 <a href="https://github.com/irfanh-dev" style="color: white; text-decoration: none;">Irfan
+            Haider</a>
+    </footer>
+
+    <script>
+        // Particle background with interactive connections
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const particles = [];
+        const particleCount = 100;
+        let mouse = { x: null, y: null, radius: 100 };
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 3 + 1;
+                this.speedX = Math.random() * 1.5 - 0.75;
+                this.speedY = Math.random() * 1.5 - 0.75;
+                this.opacity = Math.random() * 0.4 + 0.1;
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+
+                const dx = mouse.x - this.x;
+                const dy = mouse.y - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < mouse.radius) {
+                    const force = (mouse.radius - distance) / mouse.radius;
+                    this.x -= dx * force * 0.1;
+                    this.y -= dy * force * 0.1;
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = `rgba(0, 191, 255, ${this.opacity})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function connectParticles() {
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 100) {
+                        ctx.strokeStyle = `rgba(0, 191, 255, ${1 - distance / 100})`;
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        function initParticles() {
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+            connectParticles();
+            requestAnimationFrame(animateParticles);
+        }
+
+        initParticles();
+        animateParticles();
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        window.addEventListener('mousemove', (event) => {
+            mouse.x = event.clientX;
+            mouse.y = event.clientY;
+        });
+
+        window.addEventListener('touchmove', (event) => {
+            event.preventDefault();
+            const touch = event.touches[0];
+            mouse.x = touch.clientX;
+            mouse.y = touch.clientY;
+        }, { passive: false });
+
+        window.addEventListener('mouseout', () => {
+            mouse.x = null;
+            mouse.y = null;
+        });
+
+        window.addEventListener('touchend', () => {
+            mouse.x = null;
+            mouse.y = null;
+        });
+
+        // History panel functionality
+        function toggleSidePanel() {
+            const panel = document.getElementById('sidePanel');
+            panel.classList.toggle('open');
+        }
+
+        function saveToHistory(code, type, extension, filename) {
+            const history = JSON.parse(localStorage.getItem('codeHistory') || '[]');
+            const timestamp = new Date().toLocaleString();
+            const preview = code.substring(0, 50).replace(/\n/g, ' ') + (code.length > 50 ? '...' : '');
+
+            // Check if the same code and filename already exists
+            const existingIndex = history.findIndex(item => item.code === code && item.filename === filename);
+
+            if (existingIndex !== -1) {
+                // Update timestamp and move to top
+                history[existingIndex].timestamp = timestamp;
+                history[existingIndex].preview = preview;
+                const item = history.splice(existingIndex, 1)[0];
+                history.unshift(item);
+            } else {
+                // Add new entry
+                history.unshift({ code, type, extension, timestamp, preview, filename });
+                if (history.length > 50) history.pop();
+            }
+
+            localStorage.setItem('codeHistory', JSON.stringify(history));
+            updateHistoryList();
+        }
+
+        function clearHistory() {
+            // CORRECTED EMOJI
+            if (confirm('Are you sure you want to clear all history ?')) {
+                localStorage.setItem('codeHistory', '[]');
+                updateHistoryList();
+            }
+        }
+
+        function updateHistoryList() {
+            const historyList = document.getElementById('historyList');
+            const history = JSON.parse(localStorage.getItem('codeHistory') || '[]');
+            historyList.innerHTML = '';
+            history.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+
+                // Parse timestamp to extract date and time
+                const dateObj = new Date(item.timestamp);
+                const date = dateObj.toLocaleDateString();
+                const time = dateObj.toLocaleTimeString();
+                const filename = item.filename || 'code' + item.extension;
+
+                div.innerHTML = `
+                    <div class="history-item-content">
+                        <p class="history-filename">${filename}</p>
+                        <small class="history-details">${item.extension} • ${date} • ${time}</small>
+                    </div>
+                    <div class="history-item-actions">
+                        <button class="history-item-btn edit-btn" onclick="event.stopPropagation(); loadFromHistory(${index})" title="Edit">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                        </button>
+                        <button class="history-item-btn delete" onclick="event.stopPropagation(); deleteHistory(${index})" title="Delete">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                <line x1="10" y1="11" x2="10" y2="17"></line>
+                                <line x1="14" y1="11" x2="14" y2="17"></line>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                historyList.appendChild(div);
+            });
+        }
+
+        function loadFromHistory(index) {
+            const history = JSON.parse(localStorage.getItem('codeHistory') || '[]');
+            if (index >= 0 && index < history.length) {
+                const item = history[index];
+                document.getElementById('codeInput').value = item.code;
+                document.getElementById('fileNameInput').value = item.filename || '';
+                document.getElementById('detectedType').textContent = `Loaded from history: ${item.type.toUpperCase()} `;
+            }
+        }
+
+        function deleteHistory(index) {
+            const history = JSON.parse(localStorage.getItem('codeHistory') || '[]');
+            if (index >= 0 && index < history.length) {
+                history.splice(index, 1);
+                localStorage.setItem('codeHistory', JSON.stringify(history));
+                updateHistoryList();
+            }
+        }
+
+        // Code detection for multiple languages
+        function detectCodeType(code) {
+            code = code.trim();
+
+            if (/<(!DOCTYPE html|html|body|div|script|style)/i.test(code)) {
+                return { type: 'html', extension: '.html', mimeType: 'text/html' };
+            }
+            if (/\b(import|def|class|print|if|else|for|while|try|except)\b/.test(code)) {
+                return { type: 'python', extension: '.py', mimeType: 'text/x-python' };
+            }
+            if (/\b(function|const|let|var|console\.|document\.|async|await|=>)\b/.test(code)) {
+                return { type: 'javascript', extension: '.js', mimeType: 'text/javascript' };
+            }
+            if (/\b([a-zA-Z0-9_\-]+\s*\{[^}]+\}|@media|@keyframes)\b/.test(code)) {
+                return { type: 'css', extension: '.css', mimeType: 'text/css' };
+            }
+            if (/\b(public|class|void|static|int|double|String|System\.out\.)\b/.test(code)) {
+                return { type: 'java', extension: '.java', mimeType: 'text/x-java-source' };
+            }
+            if (/\b(#include|using namespace|int main|cout|cin|std::)\b/.test(code)) {
+                return { type: 'cpp', extension: '.cpp', mimeType: 'text/x-c++src' };
+            }
+            if (/^\s*[{[]\s*".*":/.test(code)) {
+                return { type: 'json', extension: '.json', mimeType: 'application/json' };
+            }
+            if (/^<\?xml|^<[a-zA-Z_][a-zA-Z0-9_\-]*>/.test(code)) {
+                return { type: 'xml', extension: '.xml', mimeType: 'application/xml' };
+            }
+            if (/^#+\s|^[-*+]\s|\[.*\]\(.*\)/.test(code)) {
+                return { type: 'markdown', extension: '.md', mimeType: 'text/markdown' };
+            }
+            if (/\b(<?php|function|echo|array|\$_|class|namespace)\b/.test(code)) {
+                return { type: 'php', extension: '.php', mimeType: 'text/x-php' };
+            }
+            if (/\b(def|class|module|puts|require|if|end)\b/.test(code)) {
+                return { type: 'ruby', extension: '.rb', mimeType: 'text/x-ruby' };
+            }
+            if (/\b(SELECT|INSERT|UPDATE|DELETE|FROM|WHERE|JOIN|CREATE|TABLE)\b/i.test(code)) {
+                return { type: 'sql', extension: '.sql', mimeType: 'text/x-sql' };
+            }
+            if (/\b(title|author|date|documentclass)\b/i.test(code)) {
+                return { type: 'latex', extension: '.tex', mimeType: 'text/x-latex' };
+            }
+            if (/\b(epub|book|chapter|metadata)\b/i.test(code)) {
+                return { type: 'epub', extension: '.epub', mimeType: 'application/epub+zip' };
+            }
+            if (/%PDF-\d+\.\d+/i.test(code)) {
+                return { type: 'pdf', extension: '.pdf', mimeType: 'application/pdf' };
+            }
+
+            return { type: 'text', extension: '.txt', mimeType: 'text/plain' };
+        }
+
+        function downloadCode() {
+            const code = document.getElementById('codeInput').value;
+            if (!code.trim()) {
+                // CORRECTED EMOJI
+                alert('Oh captain, you forgot to paste some code! 🫡');
+                return;
+            }
+
+            let filename = document.getElementById('fileNameInput').value.trim();
+            const { type, extension, mimeType } = detectCodeType(code);
+
+            // Validate and process filename
+            if (!filename) {
+                filename = `code${extension} `;
+            } else {
+                // Ensure filename has an extension
+                if (!/\.[a-zA-Z0-9]+$/.test(filename)) {
+                    filename += extension;
+                }
+            }
+
+            document.getElementById('detectedType').textContent = `Detected: ${type.toUpperCase()} !Downloading as ${filename}...`;
+
+            saveToHistory(code, type, extension, filename);
+
+            const blob = new Blob([code], { type: mimeType });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        // --- NEW KEYPRESS FUNCTIONALITY START ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const fileNameInput = document.getElementById('fileNameInput');
+            fileNameInput.addEventListener('keyup', (event) => {
+                // Check if the key pressed is the Enter key
+                if (event.key === 'Enter') {
+                    // Prevent any default form submission
+                    event.preventDefault();
+                    downloadCode();
+                }
+            });
+        });
+        // --- NEW KEYPRESS FUNCTIONALITY END ---
+
+        // Initialize history on page load
+        updateHistoryList();
+    </script>
+</body>
+
+</html>
